@@ -13,7 +13,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Custom parts reference | xFormers 0.0.7 documentation</title>
+  <title>Custom parts reference | xFormers 0.0.16 documentation</title>
   
   <script src="../_static/js/ga.js"></script>
   <script src="../_static/js/redirect.js"></script>
@@ -23,7 +23,7 @@
   
   <link rel="canonical" href="https://facebookresearch.github.io/xformerscustom_parts/index.html" />
   
-  <meta property="og:title" content="Custom parts reference | xFormers 0.0.7 documentation">
+  <meta property="og:title" content="Custom parts reference | xFormers 0.0.16 documentation">
   <meta name="description" content="API docs for xFormers. xFormers is a PyTorch extension library for composable and optimized Transformer blocks.">
   <meta property="og:description" content="API docs for xFormers. xFormers is a PyTorch extension library for composable and optimized Transformer blocks.">
   <!--<meta property="og:image" content="https://mmf.sh/img/logo.png">-->
@@ -43,7 +43,7 @@
   <link rel="stylesheet" href="../_static/css/customize.css" type="text/css" />
   <link rel="index" title="Index" href="../genindex.html" />
   <link rel="search" title="Search" href="../search.html" />
-  <link rel="prev" title="Using Triton-based layers" href="../tutorials/triton.html" /> 
+  <link rel="prev" title="Hierarchical Transformers" href="../tutorials/hierarchical.html" /> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -135,23 +135,23 @@
         
         
         
-        <p><span class="caption-text">Index</span></p>
+        <p class="caption" role="heading"><span class="caption-text">Index</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../what_is_xformers.html">What is xFormers?</a></li>
 </ul>
-<p><span class="caption-text">Components Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">Components Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../components/index.html">API Reference</a></li>
 </ul>
-<p><span class="caption-text">Build models and blocks programatically</span></p>
+<p class="caption" role="heading"><span class="caption-text">Build models and blocks programatically</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../factory/index.html">Factory</a></li>
 </ul>
-<p><span class="caption-text">Tutorials and examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Tutorials and examples</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../tutorials/index.html">Tutorials</a></li>
 </ul>
-<p><span class="caption-text">Some custom parts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Some custom parts</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Custom parts reference</a></li>
 </ul>
@@ -227,19 +227,19 @@
               <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
                 
   <section id="custom-parts-reference">
-<h1>Custom parts reference<a class="headerlink" href="#custom-parts-reference" title="Permalink to this headline">¶</a></h1>
+<h1>Custom parts reference<a class="headerlink" href="#custom-parts-reference" title="Permalink to this heading">¶</a></h1>
 <section id="sparse-cuda-kernels">
-<h2>Sparse CUDA kernels<a class="headerlink" href="#sparse-cuda-kernels" title="Permalink to this headline">¶</a></h2>
+<h2>Sparse CUDA kernels<a class="headerlink" href="#sparse-cuda-kernels" title="Permalink to this heading">¶</a></h2>
 <section id="building-the-kernels">
-<h3>1. Building the kernels<a class="headerlink" href="#building-the-kernels" title="Permalink to this headline">¶</a></h3>
+<h3>1. Building the kernels<a class="headerlink" href="#building-the-kernels" title="Permalink to this heading">¶</a></h3>
 <p>xFormers transparently supports CUDA kernels to implement sparse attention computations, some of which are based on <a class="reference external" href="https://github.com/google-research/sputnik">Sputnik</a>.
 These kernels require xFormers to be installed from source, and the recipient machine to be able to compile CUDA source code.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone git@github.com:fairinternal/xformers.git
-conda create --name xformer_env <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.8
-conda activate xformer_env
-<span class="nb">cd</span> xformers
-pip install -r requirements.txt
-pip install -e .
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git<span class="w"> </span>clone<span class="w"> </span>git@github.com:fairinternal/xformers.git
+conda<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>xformer_env<span class="w"> </span><span class="nv">python</span><span class="o">=</span><span class="m">3</span>.8
+conda<span class="w"> </span>activate<span class="w"> </span>xformer_env
+<span class="nb">cd</span><span class="w"> </span>xformers
+pip<span class="w"> </span>install<span class="w"> </span>-r<span class="w"> </span>requirements.txt
+pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
 </pre></div>
 </div>
 <p>Common issues are related to:</p>
@@ -250,21 +250,21 @@ pip install -e .
 </ul>
 </section>
 <section id="usage">
-<h3>2. Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h3>
+<h3>2. Usage<a class="headerlink" href="#usage" title="Permalink to this heading">¶</a></h3>
 <p>The sparse attention computation is automatically triggered when using the <strong>scaled dot product</strong> attention (<a class="reference external" href="https://github.com/facebookresearch/xformers/blob/main/xformers/components/attention/scaled_dot_product.py">see</a>), and a sparse enough mask (currently less than 30% of true values).
 There is nothing specific to do, and a couple of examples are provided in the tutorials.</p>
 </section>
 </section>
 <section id="triton-parts">
-<h2>Triton parts<a class="headerlink" href="#triton-parts" title="Permalink to this headline">¶</a></h2>
+<h2>Triton parts<a class="headerlink" href="#triton-parts" title="Permalink to this heading">¶</a></h2>
 <section id="requirements">
-<h3>1. Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h3>
+<h3>1. Requirements<a class="headerlink" href="#requirements" title="Permalink to this heading">¶</a></h3>
 <p>We use <a class="reference external" href="https://triton-lang.org/">Triton</a> to implement the following parts.
 These parts will only be visible on a CUDA-enabled machine, and Triton needs to be installed (<cite>pip install triton</cite>),
 if any of these conditions are not met a warning is issued.</p>
 </section>
 <section id="possible-usage">
-<h3>2. Possible usage<a class="headerlink" href="#possible-usage" title="Permalink to this headline">¶</a></h3>
+<h3>2. Possible usage<a class="headerlink" href="#possible-usage" title="Permalink to this heading">¶</a></h3>
 <p>The following parts are independent and can be used as-is in any model,
 provided the above limitations (Triton is installed, and there is a CUDA GPU present) are fullfilled.
 They are used by default, when possible, in some of the xFormers building blocks.</p>
@@ -281,7 +281,7 @@ They are used by default, when possible, in some of the xFormers building blocks
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="../tutorials/triton.html" class="btn btn-neutral" title="Using Triton-based layers" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="../tutorials/hierarchical.html" class="btn btn-neutral" title="Hierarchical Transformers" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -342,10 +342,11 @@ They are used by default, when possible, in some of the xFormers building blocks
   
   <script type="text/javascript" id="documentation_options" data-url_root="../"
     src="../_static/documentation_options.js"></script>
+  <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
   <script src="../_static/jquery.js"></script>
   <script src="../_static/underscore.js"></script>
+  <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
   <script src="../_static/doctools.js"></script>
-  <script src="../_static/language_data.js"></script>
   
 
   

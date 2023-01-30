@@ -13,7 +13,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Extend the xFormers parts zoo | xFormers 0.0.7 documentation</title>
+  <title>Extend the xFormers parts zoo | xFormers 0.0.16 documentation</title>
   
   <script src="../_static/js/ga.js"></script>
   <script src="../_static/js/redirect.js"></script>
@@ -23,7 +23,7 @@
   
   <link rel="canonical" href="https://facebookresearch.github.io/xformerstutorials/extend_attentions.html" />
   
-  <meta property="og:title" content="Extend the xFormers parts zoo | xFormers 0.0.7 documentation">
+  <meta property="og:title" content="Extend the xFormers parts zoo | xFormers 0.0.16 documentation">
   <meta name="description" content="API docs for xFormers. xFormers is a PyTorch extension library for composable and optimized Transformer blocks.">
   <meta property="og:description" content="API docs for xFormers. xFormers is a PyTorch extension library for composable and optimized Transformer blocks.">
   <!--<meta property="og:image" content="https://mmf.sh/img/logo.png">-->
@@ -44,7 +44,7 @@
   <link rel="index" title="Index" href="../genindex.html" />
   <link rel="search" title="Search" href="../search.html" />
   <link rel="next" title="I’m only interested in testing out the attention mechanisms that are hosted here" href="use_attention.html" />
-  <link rel="prev" title="Using BlockSparseAttention" href="blocksparse.html" /> 
+  <link rel="prev" title="How to Enable Fused Operations Using AOTAutograd and NVFuser" href="aotautograd_nvfuser.html" /> 
 
   
   <script src="../_static/js/modernizr.min.js"></script>
@@ -136,23 +136,23 @@
         
         
         
-        <p><span class="caption-text">Index</span></p>
+        <p class="caption" role="heading"><span class="caption-text">Index</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../what_is_xformers.html">What is xFormers?</a></li>
 </ul>
-<p><span class="caption-text">Components Documentation</span></p>
+<p class="caption" role="heading"><span class="caption-text">Components Documentation</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../components/index.html">API Reference</a></li>
 </ul>
-<p><span class="caption-text">Build models and blocks programatically</span></p>
+<p class="caption" role="heading"><span class="caption-text">Build models and blocks programatically</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../factory/index.html">Factory</a></li>
 </ul>
-<p><span class="caption-text">Tutorials and examples</span></p>
+<p class="caption" role="heading"><span class="caption-text">Tutorials and examples</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a></li>
 </ul>
-<p><span class="caption-text">Some custom parts</span></p>
+<p class="caption" role="heading"><span class="caption-text">Some custom parts</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../custom_parts/index.html">Custom parts reference</a></li>
 </ul>
@@ -230,7 +230,7 @@
               <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
                 
   <section id="extend-the-xformers-parts-zoo">
-<h1>Extend the xFormers parts zoo<a class="headerlink" href="#extend-the-xformers-parts-zoo" title="Permalink to this headline">¶</a></h1>
+<h1>Extend the xFormers parts zoo<a class="headerlink" href="#extend-the-xformers-parts-zoo" title="Permalink to this heading">¶</a></h1>
 <p>This can be done in a private fork of xFormers, if this is a work in progress or not something that you would
 like to share at this point, or directly in xFormers in order to submit a <a class="reference external" href="https://github.com/fairinternal/xformers/pulls">PR</a>.</p>
 <p>We follow a register-based architecture, which is practical for unit testing, and loose inheritance
@@ -308,7 +308,7 @@ like to share at this point, or directly in xFormers in order to submit a <a cla
         <a href="use_attention.html" class="btn btn-neutral float-right" title="I’m only interested in testing out the attention mechanisms that are hosted here" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="blocksparse.html" class="btn btn-neutral" title="Using BlockSparseAttention" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="aotautograd_nvfuser.html" class="btn btn-neutral" title="How to Enable Fused Operations Using AOTAutograd and NVFuser" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -357,10 +357,11 @@ like to share at this point, or directly in xFormers in order to submit a <a cla
   
   <script type="text/javascript" id="documentation_options" data-url_root="../"
     src="../_static/documentation_options.js"></script>
+  <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
   <script src="../_static/jquery.js"></script>
   <script src="../_static/underscore.js"></script>
+  <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
   <script src="../_static/doctools.js"></script>
-  <script src="../_static/language_data.js"></script>
   
 
   
