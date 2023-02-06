@@ -12,7 +12,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>xformers.components.attention.scaled_dot_product | xFormers 0.0.16 documentation</title>
+  <title>xformers.components.attention.scaled_dot_product | xFormers 0.0.17 documentation</title>
   
   <script src="../../../../_static/js/ga.js"></script>
   <script src="../../../../_static/js/redirect.js"></script>
@@ -22,7 +22,7 @@
   
   <link rel="canonical" href="https://facebookresearch.github.io/xformers_modules/xformers/components/attention/scaled_dot_product.html" />
   
-  <meta property="og:title" content="xformers.components.attention.scaled_dot_product | xFormers 0.0.16 documentation">
+  <meta property="og:title" content="xformers.components.attention.scaled_dot_product | xFormers 0.0.17 documentation">
   <meta name="description" content="API docs for xFormers. xFormers is a PyTorch extension library for composable and optimized Transformer blocks.">
   <meta property="og:description" content="API docs for xFormers. xFormers is a PyTorch extension library for composable and optimized Transformer blocks.">
   <!--<meta property="og:image" content="https://mmf.sh/img/logo.png">-->
@@ -324,8 +324,9 @@
             <span class="p">)</span>
 
         <span class="c1"># Handle a possibly deferred causal mask handling</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">causal</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="n">AttentionMask</span><span class="o">.</span><span class="n">make_causal</span><span class="p">(</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">AttentionMask</span><span class="o">.</span><span class="n">make_causal</span><span class="p">(</span>
                 <span class="n">seq_len</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span>
                 <span class="n">to_seq_len</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span>
                 <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
@@ -333,10 +334,10 @@
             <span class="p">)</span>
 
         <span class="c1"># Merge the optional causal mask and the user-provided mask</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
-            <span class="n">att_mask</span> <span class="o">=</span> <span class="n">att_mask</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span> <span class="k">if</span> <span class="n">att_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">mask</span>
+            <span class="n">att_mask</span> <span class="o">=</span> <span class="n">att_mask</span> <span class="o">+</span> <span class="n">mask</span> <span class="k">if</span> <span class="n">att_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">mask</span>
 
         <span class="c1"># Try to handle a case where the sequence is smaller than the mask</span>
         <span class="k">if</span> <span class="p">(</span>
