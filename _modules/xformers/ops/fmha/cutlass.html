@@ -12,7 +12,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>xformers.ops.fmha.cutlass | xFormers 0.0.17 documentation</title>
+  <title>xformers.ops.fmha.cutlass | xFormers 0.0.21 documentation</title>
   
   <script src="../../../../_static/js/ga.js"></script>
   <script src="../../../../_static/js/redirect.js"></script>
@@ -22,7 +22,7 @@
   
   <link rel="canonical" href="https://facebookresearch.github.io/xformers_modules/xformers/ops/fmha/cutlass.html" />
   
-  <meta property="og:title" content="xformers.ops.fmha.cutlass | xFormers 0.0.17 documentation">
+  <meta property="og:title" content="xformers.ops.fmha.cutlass | xFormers 0.0.21 documentation">
   <meta name="description" content="API docs for xFormers. xFormers is a PyTorch extension library for composable and optimized Transformer blocks.">
   <meta property="og:description" content="API docs for xFormers. xFormers is a PyTorch extension library for composable and optimized Transformer blocks.">
   <!--<meta property="og:image" content="https://mmf.sh/img/logo.png">-->
@@ -231,14 +231,17 @@
 <span class="c1"># LICENSE file in the root directory of this source tree.</span>
 
 
+<span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Set</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">from</span> <span class="nn">..common</span> <span class="kn">import</span> <span class="n">get_xformers_operator</span><span class="p">,</span> <span class="n">register_operator</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">attn_bias</span>
 <span class="kn">from</span> <span class="nn">.attn_bias</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">AttentionBias</span><span class="p">,</span>
     <span class="n">BlockDiagonalCausalMask</span><span class="p">,</span>
+    <span class="n">BlockDiagonalCausalWithOffsetPaddedKeysMask</span><span class="p">,</span>
     <span class="n">BlockDiagonalMask</span><span class="p">,</span>
     <span class="n">LowerTriangularMask</span><span class="p">,</span>
     <span class="n">LowerTriangularMaskWithTensorBias</span><span class="p">,</span>
@@ -280,24 +283,24 @@
 
 <span class="k">def</span> <span class="nf">_get_seqlen_info</span><span class="p">(</span>
     <span class="n">inp</span><span class="p">:</span> <span class="n">Inputs</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">int</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">],</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
     <span class="n">attn_bias</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">attn_bias</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attn_bias</span><span class="p">,</span> <span class="n">BlockDiagonalMask</span><span class="p">):</span>
-        <span class="n">attn_bias</span><span class="o">.</span><span class="n">k_seqinfo</span><span class="o">.</span><span class="n">cu_seqlen</span> <span class="o">=</span> <span class="n">attn_bias</span><span class="o">.</span><span class="n">k_seqinfo</span><span class="o">.</span><span class="n">cu_seqlen</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
-            <span class="n">inp</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span>
-        <span class="p">)</span>
-        <span class="n">attn_bias</span><span class="o">.</span><span class="n">q_seqinfo</span><span class="o">.</span><span class="n">cu_seqlen</span> <span class="o">=</span> <span class="n">attn_bias</span><span class="o">.</span><span class="n">q_seqinfo</span><span class="o">.</span><span class="n">cu_seqlen</span><span class="o">.</span><span class="n">to</span><span class="p">(</span>
-            <span class="n">inp</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">non_blocking</span><span class="o">=</span><span class="kc">True</span>
-        <span class="p">)</span>
-        <span class="n">cu_seqlen_k</span> <span class="o">=</span> <span class="n">attn_bias</span><span class="o">.</span><span class="n">k_seqinfo</span><span class="o">.</span><span class="n">cu_seqlen</span>
-        <span class="n">cu_seqlen_q</span> <span class="o">=</span> <span class="n">attn_bias</span><span class="o">.</span><span class="n">q_seqinfo</span><span class="o">.</span><span class="n">cu_seqlen</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span>
+        <span class="n">attn_bias</span><span class="p">,</span> <span class="p">(</span><span class="n">BlockDiagonalMask</span><span class="p">,</span> <span class="n">BlockDiagonalCausalWithOffsetPaddedKeysMask</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="n">attn_bias</span><span class="o">.</span><span class="n">k_seqinfo</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">attn_bias</span><span class="o">.</span><span class="n">q_seqinfo</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">seqstart_k</span> <span class="o">=</span> <span class="n">attn_bias</span><span class="o">.</span><span class="n">k_seqinfo</span><span class="o">.</span><span class="n">seqstart</span>
+        <span class="n">seqstart_q</span> <span class="o">=</span> <span class="n">attn_bias</span><span class="o">.</span><span class="n">q_seqinfo</span><span class="o">.</span><span class="n">seqstart</span>
         <span class="n">max_seqlen_q</span> <span class="o">=</span> <span class="n">attn_bias</span><span class="o">.</span><span class="n">q_seqinfo</span><span class="o">.</span><span class="n">max_seqlen</span>
+        <span class="n">max_seqlen_k</span> <span class="o">=</span> <span class="n">attn_bias</span><span class="o">.</span><span class="n">k_seqinfo</span><span class="o">.</span><span class="n">max_seqlen</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">cu_seqlen_k</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="n">cu_seqlen_q</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">seqstart_k</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">seqstart_q</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">max_seqlen_q</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">max_seqlen_k</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
-    <span class="k">return</span> <span class="n">cu_seqlen_k</span><span class="p">,</span> <span class="n">cu_seqlen_q</span><span class="p">,</span> <span class="n">max_seqlen_q</span>
+    <span class="k">return</span> <span class="n">seqstart_k</span><span class="p">,</span> <span class="n">seqstart_q</span><span class="p">,</span> <span class="n">max_seqlen_q</span><span class="p">,</span> <span class="n">max_seqlen_k</span>
 
 
 <span class="k">def</span> <span class="nf">_get_tensor_bias</span><span class="p">(</span>
@@ -316,9 +319,56 @@
     <span class="n">attn_bias_tensor</span> <span class="o">=</span> <span class="n">_get_tensor_bias</span><span class="p">(</span><span class="n">attn_bias</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">attn_bias_tensor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">alignment</span> <span class="o">=</span> <span class="mi">128</span> <span class="o">//</span> <span class="n">torch</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="n">attn_bias_tensor</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span><span class="o">.</span><span class="n">bits</span>
-        <span class="n">check_lastdim_alignment_stride1</span><span class="p">(</span>
-            <span class="n">reasons</span><span class="p">,</span> <span class="s2">&quot;attn_bias&quot;</span><span class="p">,</span> <span class="n">attn_bias_tensor</span><span class="p">,</span> <span class="n">alignment</span>
-        <span class="p">)</span>
+        <span class="n">show_padding_hint</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">attn_bias_tensor</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">attn_bias_tensor</span><span class="o">.</span><span class="n">stride</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">%</span> <span class="n">alignment</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;attn_bias.stride(-2) % </span><span class="si">{</span><span class="n">alignment</span><span class="si">}</span><span class="s2"> != 0 (attn_bias.stride() = </span><span class="si">{</span><span class="n">attn_bias_tensor</span><span class="o">.</span><span class="n">stride</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+                <span class="p">)</span>
+                <span class="n">show_padding_hint</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">show_padding_hint</span><span class="p">:</span>
+            <span class="n">reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+<span class="w">                </span><span class="sd">&quot;&quot;&quot;\</span>
+<span class="sd">HINT: To use an `attn_bias` with a sequence length that is not a multiple of 8, \</span>
+<span class="sd">you need to ensure memory is aligned by slicing a bigger tensor. \</span>
+<span class="sd">Example: use `attn_bias = torch.zeros([1, 1, 5, 8])[:,:,:,:5]` instead of `torch.zeros([1, 1, 5, 5])`&quot;&quot;&quot;</span>
+            <span class="p">)</span>
+        <span class="c1"># We can have stride=0 sometimes if dimension=1</span>
+        <span class="k">if</span> <span class="n">attn_bias_tensor</span><span class="o">.</span><span class="n">stride</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;attn_bias.stride(-1) &gt; 1 (attn_bias.stride() = </span><span class="si">{</span><span class="n">attn_bias_tensor</span><span class="o">.</span><span class="n">stride</span><span class="p">()</span><span class="si">}</span><span class="s2">) - &quot;</span>
+                <span class="s2">&quot;you should call `.contiguous()` on the bias&quot;</span>
+            <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">_CustomMaskType</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    (Matches CustomMaskType in C++.)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">NoCustomMask</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">CausalFromTopLeft</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">CausalFromBottomRight</span> <span class="o">=</span> <span class="mi">2</span>
+
+
+<span class="k">def</span> <span class="nf">_custom_mask_type</span><span class="p">(</span><span class="n">bias</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">AttentionBias</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span>
+        <span class="n">bias</span><span class="p">,</span>
+        <span class="p">(</span>
+            <span class="n">LowerTriangularMask</span><span class="p">,</span>
+            <span class="n">BlockDiagonalCausalMask</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">_CustomMaskType</span><span class="o">.</span><span class="n">CausalFromTopLeft</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span>
+        <span class="n">bias</span><span class="p">,</span>
+        <span class="p">(</span>
+            <span class="n">attn_bias</span><span class="o">.</span><span class="n">BlockDiagonalCausalFromBottomRightMask</span><span class="p">,</span>
+            <span class="n">BlockDiagonalCausalWithOffsetPaddedKeysMask</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">_CustomMaskType</span><span class="o">.</span><span class="n">CausalFromBottomRight</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">_CustomMaskType</span><span class="o">.</span><span class="n">NoCustomMask</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="FwOp"><a class="viewcode-back" href="../../../../components/ops.html#xformers.ops.fmha.cutlass.FwOp">[docs]</a><span class="nd">@register_operator</span>
@@ -339,6 +389,8 @@
         <span class="n">LowerTriangularMaskWithTensorBias</span><span class="p">,</span>
         <span class="n">BlockDiagonalMask</span><span class="p">,</span>
         <span class="n">BlockDiagonalCausalMask</span><span class="p">,</span>
+        <span class="n">BlockDiagonalCausalWithOffsetPaddedKeysMask</span><span class="p">,</span>
+        <span class="n">attn_bias</span><span class="o">.</span><span class="n">BlockDiagonalCausalFromBottomRightMask</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">SUPPORTS_DROPOUT</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">SUPPORTS_CUSTOM_SCALE</span> <span class="o">=</span> <span class="kc">True</span>
@@ -357,22 +409,22 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">]]:</span>
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">attn_bias</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">FwOp</span><span class="o">.</span><span class="n">SUPPORTED_ATTN_BIAS_TYPES</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Unsupported attn_bias type&quot;</span><span class="p">)</span>
-        <span class="n">causal</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">inp</span><span class="o">.</span><span class="n">attn_bias</span><span class="p">,</span> <span class="p">(</span><span class="n">LowerTriangularMask</span><span class="p">,</span> <span class="n">BlockDiagonalCausalMask</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="n">cu_seqlen_k</span><span class="p">,</span> <span class="n">cu_seqlen_q</span><span class="p">,</span> <span class="n">max_seqlen_q</span> <span class="o">=</span> <span class="n">_get_seqlen_info</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
+        <span class="n">seqstart_k</span><span class="p">,</span> <span class="n">seqstart_q</span><span class="p">,</span> <span class="n">max_seqlen_q</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_get_seqlen_info</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
         <span class="n">out</span><span class="p">,</span> <span class="n">lse</span><span class="p">,</span> <span class="n">rng_seed</span><span class="p">,</span> <span class="n">rng_offset</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">OPERATOR</span><span class="p">(</span>
             <span class="n">query</span><span class="o">=</span><span class="n">inp</span><span class="o">.</span><span class="n">query</span><span class="p">,</span>
             <span class="n">key</span><span class="o">=</span><span class="n">inp</span><span class="o">.</span><span class="n">key</span><span class="p">,</span>
             <span class="n">value</span><span class="o">=</span><span class="n">inp</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
             <span class="n">attn_bias</span><span class="o">=</span><span class="n">_get_tensor_bias</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">attn_bias</span><span class="p">),</span>
-            <span class="n">cu_seqlens_q</span><span class="o">=</span><span class="n">cu_seqlen_q</span><span class="p">,</span>
-            <span class="n">cu_seqlens_k</span><span class="o">=</span><span class="n">cu_seqlen_k</span><span class="p">,</span>
+            <span class="n">seqstart_q</span><span class="o">=</span><span class="n">seqstart_q</span><span class="p">,</span>
+            <span class="n">seqstart_k</span><span class="o">=</span><span class="n">seqstart_k</span><span class="p">,</span>
             <span class="n">max_seqlen_q</span><span class="o">=</span><span class="n">max_seqlen_q</span><span class="p">,</span>
             <span class="n">dropout_p</span><span class="o">=</span><span class="n">inp</span><span class="o">.</span><span class="n">p</span><span class="p">,</span>
             <span class="n">compute_logsumexp</span><span class="o">=</span><span class="n">needs_gradient</span><span class="p">,</span>
-            <span class="n">causal</span><span class="o">=</span><span class="n">causal</span><span class="p">,</span>
+            <span class="n">custom_mask_type</span><span class="o">=</span><span class="n">_custom_mask_type</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">attn_bias</span><span class="p">),</span>
             <span class="n">scale</span><span class="o">=</span><span class="n">inp</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span>
+            <span class="n">seqlen_k</span><span class="o">=</span><span class="n">inp</span><span class="o">.</span><span class="n">attn_bias</span><span class="o">.</span><span class="n">k_seqinfo</span><span class="o">.</span><span class="n">seqlen</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">attn_bias</span><span class="p">,</span> <span class="n">BlockDiagonalCausalWithOffsetPaddedKeysMask</span><span class="p">)</span>
+            <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">ctx</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Context</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">needs_gradient</span><span class="p">:</span>
@@ -397,7 +449,31 @@
         <span class="n">check_lastdim_alignment_stride1</span><span class="p">(</span><span class="n">reasons</span><span class="p">,</span> <span class="s2">&quot;query&quot;</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">query</span><span class="p">,</span> <span class="n">matmul_alignment_mn</span><span class="p">)</span>
         <span class="n">check_lastdim_alignment_stride1</span><span class="p">(</span><span class="n">reasons</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">matmul_alignment_mn</span><span class="p">)</span>
         <span class="n">_check_bias_alignment</span><span class="p">(</span><span class="n">reasons</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">attn_bias</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">reasons</span></div>
+        <span class="k">return</span> <span class="n">reasons</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="c1"># type: ignore</span>
+    <span class="k">def</span> <span class="nf">operator_flop</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">q</span><span class="p">,</span>
+        <span class="n">k</span><span class="p">,</span>
+        <span class="n">v</span><span class="p">,</span>
+        <span class="n">b</span><span class="p">,</span>
+        <span class="n">seqstart_q</span><span class="p">,</span>
+        <span class="n">seqstart_k</span><span class="p">,</span>
+        <span class="n">max_seqlen_q_</span><span class="p">,</span>
+        <span class="n">compute_lse</span><span class="p">,</span>
+        <span class="n">custom_mask_type</span><span class="p">,</span>
+        <span class="o">*</span><span class="n">a</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">attn_operator_flop</span><span class="p">(</span>
+            <span class="n">q</span><span class="p">,</span>
+            <span class="n">k</span><span class="p">,</span>
+            <span class="n">v</span><span class="p">,</span>
+            <span class="n">causal</span><span class="o">=</span><span class="n">custom_mask_type</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">seqstart_k</span><span class="o">=</span><span class="n">seqstart_k</span><span class="p">,</span>
+            <span class="n">seqstart_q</span><span class="o">=</span><span class="n">seqstart_q</span><span class="p">,</span>
+        <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="BwOp"><a class="viewcode-back" href="../../../../components/ops.html#xformers.ops.fmha.cutlass.BwOp">[docs]</a><span class="nd">@register_operator</span>
@@ -414,6 +490,9 @@
         <span class="n">LowerTriangularMask</span><span class="p">,</span>
         <span class="c1"># TODO: Fix handling of gradient through the fMHA autograd function</span>
         <span class="c1"># LowerTriangularMaskWithTensorBias,</span>
+        <span class="n">BlockDiagonalMask</span><span class="p">,</span>
+        <span class="n">BlockDiagonalCausalMask</span><span class="p">,</span>
+        <span class="n">attn_bias</span><span class="o">.</span><span class="n">BlockDiagonalCausalFromBottomRightMask</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">SUPPORTS_ATTN_BIAS_GRAD</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">SUPPORTS_DROPOUT</span> <span class="o">=</span> <span class="n">FwOp</span><span class="o">.</span><span class="n">SUPPORTS_DROPOUT</span>
@@ -425,13 +504,8 @@
         <span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">:</span> <span class="mf">5e-4</span><span class="p">,</span>
         <span class="c1"># increased from 9e-2, more opportunities for numerical errors when bias is</span>
         <span class="c1"># used, noticed in gK on SM80</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">half</span><span class="p">:</span> <span class="mf">9.5e-2</span><span class="p">,</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">half</span><span class="p">:</span> <span class="mf">1e-1</span><span class="p">,</span>
         <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">:</span> <span class="mf">7e-1</span><span class="p">,</span>
-    <span class="p">}</span>
-    <span class="n">ERROR_RTOL</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">float</span><span class="p">:</span> <span class="mf">1e-4</span><span class="p">,</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">half</span><span class="p">:</span> <span class="mf">2e-2</span><span class="p">,</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">:</span> <span class="mf">1e-1</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">_TEST_K</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
@@ -477,9 +551,7 @@
         <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">attn_bias</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">BwOp</span><span class="o">.</span><span class="n">SUPPORTED_ATTN_BIAS_TYPES</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Unsupported attn_bias type&quot;</span><span class="p">)</span>
 
-        <span class="n">causal</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span>
-            <span class="n">inp</span><span class="o">.</span><span class="n">attn_bias</span><span class="p">,</span> <span class="p">(</span><span class="n">LowerTriangularMask</span><span class="p">,</span> <span class="n">BlockDiagonalCausalMask</span><span class="p">)</span>
-        <span class="p">)</span>
+        <span class="n">seqstart_k</span><span class="p">,</span> <span class="n">seqstart_q</span><span class="p">,</span> <span class="n">max_seqlen_q</span><span class="p">,</span> <span class="n">max_seqlen_k</span> <span class="o">=</span> <span class="n">_get_seqlen_info</span><span class="p">(</span><span class="n">inp</span><span class="p">)</span>
         <span class="n">dtype</span> <span class="o">=</span> <span class="n">inp</span><span class="o">.</span><span class="n">query</span><span class="o">.</span><span class="n">dtype</span>
 
         <span class="n">rng_seed</span> <span class="o">=</span> <span class="n">rng_offset</span> <span class="o">=</span> <span class="mi">0</span>
@@ -500,8 +572,12 @@
             <span class="n">inp</span><span class="o">.</span><span class="n">key</span><span class="p">,</span>
             <span class="n">inp</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
             <span class="n">_get_tensor_bias</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">attn_bias</span><span class="p">),</span>
-            <span class="n">ctx</span><span class="o">.</span><span class="n">get_padded_lse</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">force_pad_inf</span><span class="o">=</span><span class="n">force_pad_inf</span><span class="p">),</span>
-            <span class="n">ctx</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="p">),</span>
+            <span class="n">cu_seqlens_q</span><span class="o">=</span><span class="n">seqstart_q</span><span class="p">,</span>
+            <span class="n">cu_seqlens_k</span><span class="o">=</span><span class="n">seqstart_k</span><span class="p">,</span>
+            <span class="n">max_seqlen_q</span><span class="o">=</span><span class="n">max_seqlen_q</span><span class="p">,</span>
+            <span class="n">max_seqlen_k</span><span class="o">=</span><span class="n">max_seqlen_k</span><span class="p">,</span>
+            <span class="n">logsumexp</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">get_padded_lse</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="n">force_pad_inf</span><span class="o">=</span><span class="n">force_pad_inf</span><span class="p">),</span>
+            <span class="n">output</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">dtype</span><span class="p">),</span>
             <span class="n">dropout_p</span><span class="o">=</span><span class="n">inp</span><span class="o">.</span><span class="n">p</span><span class="p">,</span>
             <span class="c1"># if not using dropout, seed and offset are irrelevant but still expected</span>
             <span class="c1"># in function signature so just pass 0</span>
@@ -509,8 +585,9 @@
             <span class="c1"># was used.</span>
             <span class="n">rng_seed</span><span class="o">=</span><span class="n">rng_seed</span><span class="p">,</span>
             <span class="n">rng_offset</span><span class="o">=</span><span class="n">rng_offset</span><span class="p">,</span>
-            <span class="n">causal</span><span class="o">=</span><span class="n">causal</span><span class="p">,</span>
+            <span class="n">custom_mask_type</span><span class="o">=</span><span class="n">_custom_mask_type</span><span class="p">(</span><span class="n">inp</span><span class="o">.</span><span class="n">attn_bias</span><span class="p">),</span>
             <span class="n">scale</span><span class="o">=</span><span class="n">inp</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span>
+            <span class="n">num_splits_key</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># Let C++ determine it</span>
         <span class="p">)</span>
 
         <span class="c1"># c++/CUDA implementation returns an uninitialized tensor if bias doesn&#39;t</span>
@@ -520,7 +597,37 @@
         <span class="p">):</span>
             <span class="n">grad_bias</span> <span class="o">=</span> <span class="kc">None</span>
 
-        <span class="k">return</span> <span class="n">Gradients</span><span class="p">(</span><span class="n">dq</span><span class="o">=</span><span class="n">grad_q</span><span class="p">,</span> <span class="n">dk</span><span class="o">=</span><span class="n">grad_k</span><span class="p">,</span> <span class="n">dv</span><span class="o">=</span><span class="n">grad_v</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="n">grad_bias</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">Gradients</span><span class="p">(</span><span class="n">dq</span><span class="o">=</span><span class="n">grad_q</span><span class="p">,</span> <span class="n">dk</span><span class="o">=</span><span class="n">grad_k</span><span class="p">,</span> <span class="n">dv</span><span class="o">=</span><span class="n">grad_v</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="n">grad_bias</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="c1"># type: ignore</span>
+    <span class="k">def</span> <span class="nf">operator_flop</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">dO</span><span class="p">,</span>
+        <span class="n">q</span><span class="p">,</span>
+        <span class="n">k</span><span class="p">,</span>
+        <span class="n">v</span><span class="p">,</span>
+        <span class="n">b</span><span class="p">,</span>
+        <span class="n">cu_seqlens_q</span><span class="p">,</span>
+        <span class="n">cu_seqlens_k</span><span class="p">,</span>
+        <span class="n">max_seqlen_q</span><span class="p">,</span>
+        <span class="n">max_seqlen_k</span><span class="p">,</span>
+        <span class="n">logsumexp</span><span class="p">,</span>
+        <span class="n">output</span><span class="p">,</span>
+        <span class="n">dropout_p</span><span class="p">,</span>
+        <span class="n">rng_seed</span><span class="p">,</span>
+        <span class="n">rng_offset</span><span class="p">,</span>
+        <span class="n">custom_mask_type</span><span class="p">,</span>
+        <span class="n">scale</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">attn_operator_flop</span><span class="p">(</span>
+            <span class="n">q</span><span class="p">,</span>
+            <span class="n">k</span><span class="p">,</span>
+            <span class="n">v</span><span class="p">,</span>
+            <span class="n">seqstart_q</span><span class="o">=</span><span class="n">cu_seqlens_q</span><span class="p">,</span>
+            <span class="n">seqstart_k</span><span class="o">=</span><span class="n">cu_seqlens_k</span><span class="p">,</span>
+            <span class="n">causal</span><span class="o">=</span><span class="n">custom_mask_type</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="p">)</span></div>
 </pre></div>
 
               </article>
